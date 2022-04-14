@@ -1019,6 +1019,7 @@ public class Handler {
                 synchronized (this) {
                     mDone = true;
                     // 唤醒 Object类的实例方法，用来唤醒 wait 方法。
+                    // 用来唤醒所有被此对象监控的线程。所有线程都进入等待池，竞争资源，然后被执行。
                     notifyAll();
                 }
             }
@@ -1033,6 +1034,8 @@ public class Handler {
             // 修饰：类实例对象 代码块
             // 一个线程获取到了锁之后，其它线程只能在此等待
             // 可重入锁，同一个线程可多次获取这个锁，只有当所有锁都释放了，其它线程才能获取到当前锁
+
+            // 代码块执行完了就释放锁
             synchronized (this) {
                 if (timeout > 0) {
                     final long expirationTime = SystemClock.uptimeMillis() + timeout;

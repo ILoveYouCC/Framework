@@ -313,9 +313,12 @@ public class Object {
      * awakened thread enjoys no reliable privilege or disadvantage in being
      * the next thread to lock this object.
      * <p>
+     *     在当前线程放弃对该对象的锁定之前，被唤醒的线程将无法继续。被唤醒的线程将以通常的方式与可能正在积极竞争以在此对象上同步的任何其他线程竞争；例如，被唤醒的线程在成为下一个锁定该对象的线程时不享有可靠的特权或劣势。
+     *
      * This method should only be called by a thread that is the owner
      * of this object's monitor. A thread becomes the owner of the
      * object's monitor in one of three ways:
+     *  此方法只能由作为该对象监视器所有者的线程调用。线程通过以下三种方式之一成为对象监视器的所有者：
      * <ul>
      * <li>By executing a synchronized instance method of that object.
      * <li>By executing the body of a {@code synchronized} statement
@@ -323,8 +326,10 @@ public class Object {
      * <li>For objects of type {@code Class,} by executing a
      *     synchronized static method of that class.
      * </ul>
+     * <li>通过执行该对象的同步实例方法。 <li>通过执行在对象上同步的 {@code synchronized} 语句的主体。 <li>对于 {@code Class,} 类型的对象，通过执行该类的同步静态方法。 <ul>
      * <p>
      * Only one thread at a time can own an object's monitor.
+     * 一次只有一个线程可以拥有一个对象的监视器。
      *
      * @throws IllegalMonitorStateException if the current thread is not
      *                                      the owner of this object's monitor.
@@ -335,8 +340,9 @@ public class Object {
     public final native void notify();
 
     /**
-     * Wakes up all threads that are waiting on this object's monitor.
+     * wakes up all threads that are waiting on this object's monitor.
      * 唤醒所有使用此对象监控的等待中的线程。
+     * 唤醒正在此对象的监视器上等待的所有线程。
      * <p>
      * A thread waits on an object's monitor by calling one of the {@code wait} methods.
      *
@@ -365,6 +371,8 @@ public class Object {
      *                                      the owner of this object's monitor.
      * @see java.lang.Object#notify()
      * @see java.lang.Object#wait()
+     *
+     * 比如在生产者-消费者里面的使用，每次都需要唤醒所有的消费者或是生产者，以判断程序是否可以继续往下执行。
      */
     @FastNative
     public final native void notifyAll();
