@@ -1,0 +1,12 @@
+序列化是什么？
+
+将对象转化为字节序列，然后交给 I/O，可以存储在文件、可以通过网络传输、数据库保存。
+
+字节序列？
+byte 数组？未验证。
+存储对象的类型 Class
+对象的数据 属性
+对象的数据的类型
+
+I/O： ObjectInputStream/ObjectOutputStream
+

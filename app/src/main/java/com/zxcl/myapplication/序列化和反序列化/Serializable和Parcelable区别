@@ -1,0 +1,143 @@
+Serializable和Parcelable接口可以完成对象的序列化的过程，当我们需要通过Intent和Binder传输数据时就需要使用Parcelable或者Serializable，有时候我们还需要把对象持久化到存储设备上或者通过网络传输给其他客户端，这个时候也需要使用Seriazable来完成对象的持久化.
+
+一 .Serializable接口
+1、Serializable简介
+Serializable 是Java所提供的一个序列化接口，它是一个空接口，为对象提供标准的序列化和反序列化操作。使用Serializable来实现序列化相当简单，只需要类在声明中指定一个类似下面的标示即可实现默认的序列化过程。
+
+private static final long seriaVersionUID=1L;
+所以如果想让一个类实现序列化，只需要将这个类实现Serializable接口，并声明一个seriaVersionUID即可，实际上，甚至这个seriaVersionUID也不是必需的，我们不声明这个serialVersionUID，同样也可以实现反序列化，但是这将会对反序列化过程产生影响，具体影响我们后面介绍
+
+2、Serializable序列化和反序列化
+我们举一个例子吧，Person类是一个实现了Serializable接口的类，它有3个字段，name，sex,age
+
+public class Persion implements Serializable{
+  private static final  long serialVersionUID=1L;
+  public String name;
+  public String sex;
+  public int age;
+
+  public Persion(String name,String sex,int age){
+         this.name=name;
+         this.sex=sex;
+         this.age=age;
+  }
+}
+通过Serializable方式来实现对象的序列化，实现起来非常简单，几乎所有工作都被系统自动完成了。对象的序列化和反序列化也非常简单，只需要采用ObjectOutputStream和ObjectInputStream即可轻松实现。代码如下：
+
+//序列化过程
+Person person=new Person("张三","男",23);
+ObjectOutputStream out=new ObjectOutputStream(new FileOutStream("cache.txt"));
+out.writeObject(person);
+out.close();
+
+//反序列化过程
+ObjectInputStream in=new ObjectInputStream(new FileInputStream("cache.txt"));
+Person newPerson=(Person)in.readObejct();
+in.close();
+上面的代码演示了采用Serializable方式序列化对象的典型过程，很简单，只需要把实现了Serializable接口的User对象写到文件中就可以快速恢复了，恢复后的对象newPerson和person内容完全一样，但是两者并不是同一个对象。
+
+3、serialVersionUID的作用
+即使不指定serialVersionUID也可以实现序列化，那到底要不要指定呢？serialVersionUID后面的数字有什么含义？
+
+这个serialVersionUID是用来辅助序列化和反序列化的过程。原则上序列化后的数据中的serialVersionUID只有和当前类的serialVersionUID一致才能成功的反序列化.
+
+serialVersionUID的详细工作机制是这样的：序列化的时候系统会把当前类的serialVersionUID写入序列化的文件中(也可能是其他中介)，当反序列化的时候系统会去检测文件中的serialVersionUID，看它是否和当前类的serialVersionUID一致，如果一致就说明序列化的类的版本和当前类的版本是相同的，这个时候可以成功反序列化；否则就说明当前类和序列化的类相比发生了某些变换，比如成员变量的数量、类型可能会发生变化，这时候就无法正常的反序列化。会报如下错误:
+
+java.io.InvalidClassException
+所以一般来说，我们应该手动去指定serialVersionUID的值，比如"1L",也可以让IDE根据当前类的结构去生成对应的hash值，这样序列化和反序列化时两者的serialVersionUID是相同的，因此可以正常的进行反序列化。如果不不设置serialVersionUID，系统在序列化的时候默认会根据类的结构在生成对应的serialVersionUID，在反序列化的时候，如果当类有变化，比如增加或者减少字段，这时候当前的类的serialVersionUID和序列化的时候的serialVersionUID就不一样了，就会出现反序列化失败，如果没有捕获异常会导致crash。
+
+所以当我们手动制订了它之后，就可以很大程度上避免了反序列化过程的失败
+
+比如当版本升级以后，我们可能删除了某个成员变量也可能增加一些新的成员变量，这个时候我们的反序列化过程仍然可以成功，程序仍然能够最大限度地恢复数据。相反 如果我们没有指定serialVersionUID的话，程序就会挂掉。当然我们也要考虑到另外一种情况，如果类结构发生了给常规性的改变，比如修改了类名，修改了成员变量的类型，这个时候尽管serialVersionUID验证通过了，但是反序列化过程还是会失败，因为类的而结构有了重大改变，根本无法从老版本的数据还原出一个新的类结构对象。
+
+4、补充
+通过上面的分析，我们知道给serialVersionUID指定为1L或者采用IDE根据当前类结构去生成的hash值，这两者并没有本质区别，效果完全一样。再补充三点：
+
+1、静态成员变量属于类，不属于对象，所以不会参与序列化的过程
+2、用transient关键字编辑的成员变量不参与序列化的过程。
+3、可以通过重写writeObject()和readObject()两个方法来重写系统默认的序列化和反序列化的过程。不过本人并不推荐
+二. Parcelable接口
+Parcelable也是一个接口，只要实现了这个接口，一个类的对象就可以实现序列化和并且通过Intent和Binder传递。我们就借用上面Person类来看下代码：
+
+public class Person implements Parcelable{
+    private static final  long serialVersionUID=1L;
+    public String name;
+    public String sex;
+    public int age;
+
+    public Person(String name,String sex,int age){
+        this.name=name;
+        this.sex=sex;
+        this.age=age;
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(name);
+        dest.writeString(sex);
+        dest.writeInt(age);
+    }
+
+    public static final Parcelable.Creator<Person> CREATOR= new Creator<Person>() {
+        @Override
+        public Person createFromParcel(Parcel source) {
+            return new Person(source);
+        }
+
+        @Override
+        public Person[] newArray(int size) {
+            return new Person[size];
+        }
+    };
+
+    private Person(Parcel source){
+        name=source.readString();
+        sex=source.readString();
+        age=source.readInt();
+    }
+}
+这里先说一下Parcel，Parcel内部包装了可序列化的数据，可以在Binder中自由传输，从上面的代码我们可以看出，在序列化的过程中，需要实现的功能有序列化，反序列化的和内容描述。
+
+1、序列化功能由writeToParcel来完成，最终是通过Parcel中的一些列write方法来完成的。
+2、反序列化是由CREATOR来完成，其内部标明了如何创建序列化对象和数组，并通过Parcel的一些列read方法来完成反序列化过程。
+3、内容描述功能由describeContents方法来完成，几乎在所有情况下这个方法都应该返回0，仅当前对象中存在文件描述符时，此方法返回1。
+Parcelable的方法说明：
+
+方法	功能	标记为
+createFromParcel(Parcel source)	从序列化后的对象中创建原始对象
+newArray	创建指定长度的原始对象数组
+Person(Parcel source)	从序列化后的对象中创建原始对象
+writeToParcel(Parcel dest, int flags)	从当前对象吸入序列化结构中，其中flag标识有两种值0或者1，为1时标识当前对象需要作为返回值返回，不能立刻释放资源，几乎所有情况都为0	Parcelable.PARCELABLE_WRITE_RETURN_VALUE
+describeContents	返回当前对象的内容描述，如果含有文件描述符，返回1，否则返回0，几乎所有情况都是返回0	Parcelable.CONTENTS_FILE_DESCRIPTOR
+系统已经为我们提供了许多实现了Parcelable接口的类，它们都是可以直接序列化的，比如Intent，Bundle，Bitmap等，同时List和Map也可以序列化，不过要求它们的每一个元素都是可以序列化的。
+
+三.Serializable 和Parcelable的区别
+    1、平台区别
+        Serializable 是属于 Java 自带的，表示一个对象可以转换成可存储或者可传输的状态，序列化后的对象可以在网络上进行传输，也可以存储到本地。
+        Parcelable 是属于 Android 专用。不过不同于 Serializable，Parcelable实现的原理是将一个完整的对象进行分解。而分解后的每一部分都是Intent所支持的数据类型。
+    2、编写上的区别
+        Serializable代码量少，写起来方便
+        Parcelable代码多一些，略复杂
+    3、选择的原则
+        1、如果是仅仅在内存中使用，比如activity、service之间进行对象的传递，强烈推荐使用Parcelable，因为Parcelable比Serializable性能高很多。因为Serializable在序列化的时候会产生大量的临时变量， 从而引起频繁的GC。
+        2、如果是持久化操作，推荐Serializable，虽然Serializable效率比较低，但是还是要选择它，因为在外界有变化的情况下，Parcelable不能很好的保存数据的持续性。
+    4、本质的区别
+        1、Serializable 的本质是使用了反射，序列化的过程比较慢，这种机制在序列化的时候会创建很多临时的对象，比引起频繁的GC。
+        --------------------- qingfeng --------------------
+        反射？啥时候反射的。
+
+        2、Parcelable 方式的本质是将一个完整的对象进行分解，而分解后的每一部分都是Intent所支持的类型，这样就实现了传递对象的功能了。
+        --------------------- qingfeng --------------------
+
+参考文献
+Android跨进程通信IPC之4——AndroidIPC基础1
+
+作者：Sophia_dd35
+链接：https://www.jianshu.com/p/2ed41bb7aa3a
+来源：简书
+著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。
