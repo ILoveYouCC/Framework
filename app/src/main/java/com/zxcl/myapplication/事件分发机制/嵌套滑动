@@ -1,0 +1,7 @@
+NestScrollView 嵌套 RecyclerView
+
+需求：滑动RecyclerView时NestScrollView不滑动
+
+目前现状：RecyclerView 滑动到底部时，会同步滑动 NestScrollView
+
+

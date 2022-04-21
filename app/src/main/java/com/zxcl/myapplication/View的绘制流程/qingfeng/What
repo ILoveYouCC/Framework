@@ -1,0 +1,10 @@
+View 的绘制流程
+
+onMeasure()
+    三种测量模式 MeasureSpec
+        EXACTLY: 精确测量模式
+        UNSPECIFIED：未指定
+        AT_MOST：最大测量模式。
+
+onLayout()
+onDraw()

@@ -1,0 +1,39 @@
+内存泄露：
+    对象被长生命周期对象所引用，导致改被回收的时候没有回收，这一块内存就泄露了。
+
+1、Handler 发送延时消息。
+    Handler 以内部类的形式创建，隐形吃用外部类的对象。
+
+    handler发送Message消息到MessageQueue，因此MQ持有Message，而Message的target又引用handler，因此在消息未被处理比如延时消息时，activity是不会被回收的。也就是MessageQueue->Message->Handler->Activity
+
+解决方案：使用静态内部类
+
+2、Runnable。 和上面一样
+
+解决方案：使用弱引用。
+
+
+5. 常见的内存泄露原因 & 解决方案
+常见引发内存泄露原因主要有：
+    一、集合类
+
+    二、Static关键字修饰的成员变量
+        static 关键字修饰的成员变量生命周期 = 应用程序的生命周期 = 类的生命周期
+
+        单例模式传入了 Activity 的对象。使用 context.applicationContext 传入 application 的实例。
+            当前应用：字体单例类
+
+    三、非静态内部类 / 匿名类
+        典型的Handler/Runnable延时消息，定时消息
+        页面关闭时，移除消息
+
+    四、资源对象使用后未关闭
+        BroadcastReceiver 未解绑
+        文件流未关闭
+        数据库游标未关闭
+        图片Bitmap未回收 recycle
+        动画无限循环时要记得停止动画
+
+
+工作中的检测方法：
+    LeakCanary
