@@ -328,31 +328,45 @@ public class NestedScrollView extends FrameLayout implements NestedScrollingPare
         onNestedScrollInternal(dyUnconsumed, type, consumed);
     }
 
+
+    /**
+     * 在这里真正处理 NestedScrollView 的嵌套滑动
+     * @param dyUnconsumed
+     * @param type
+     * @param consumed
+     */
     private void onNestedScrollInternal(int dyUnconsumed, int type, @Nullable int[] consumed) {
+        // 记录下当前纵向的位置
         final int oldScrollY = getScrollY();
+        // scrollTo 滑动到这里去
+        // 自己滑动，滑动这里多距离。内部其实还是调用了 scrollTo
         scrollBy(0, dyUnconsumed);
+        // 计算自己消费的距离。
         final int myConsumed = getScrollY() - oldScrollY;
 
         if (consumed != null) {
             consumed[1] += myConsumed;
         }
+        // 计算还剩下多少未消费的距离。
         final int myUnconsumed = dyUnconsumed - myConsumed;
 
+        // 还给子布局
         mChildHelper.dispatchNestedScroll(0, myConsumed, 0, myUnconsumed, null, type, consumed);
     }
 
     // NestedScrollingParent2
 
     @Override
-    public boolean onStartNestedScroll(@NonNull View child, @NonNull View target, int axes,
-            int type) {
+    public boolean onStartNestedScroll(@NonNull View child, @NonNull View target, int axes, int type) {
         return (axes & ViewCompat.SCROLL_AXIS_VERTICAL) != 0;
     }
 
     @Override
     public void onNestedScrollAccepted(@NonNull View child, @NonNull View target, int axes,
             int type) {
+        // 这里面就进行了一个赋值操作。
         mParentHelper.onNestedScrollAccepted(child, target, axes, type);
+
         startNestedScroll(ViewCompat.SCROLL_AXIS_VERTICAL, type);
     }
 
@@ -371,6 +385,7 @@ public class NestedScrollView extends FrameLayout implements NestedScrollingPare
     @Override
     public void onNestedPreScroll(@NonNull View target, int dx, int dy, @NonNull int[] consumed,
             int type) {
+        // 在这里真正开始处理滑动事件
         dispatchNestedPreScroll(dx, dy, consumed, null, type);
     }
 
@@ -888,6 +903,7 @@ public class NestedScrollView extends FrameLayout implements NestedScrollingPare
                 }
 
                 final int y = (int) ev.getY(activePointerIndex);
+                // 纵向偏移量
                 int deltaY = mLastMotionY - y;
                 deltaY -= releaseVerticalGlow(deltaY, ev.getX(activePointerIndex));
                 if (!mIsBeingDragged && Math.abs(deltaY) > mTouchSlop) {
@@ -904,6 +920,7 @@ public class NestedScrollView extends FrameLayout implements NestedScrollingPare
                 }
                 if (mIsBeingDragged) {
                     // Start with nested pre scrolling
+                    // 通知父布局处理滑动事件
                     if (dispatchNestedPreScroll(0, deltaY, mScrollConsumed, mScrollOffset,
                             ViewCompat.TYPE_TOUCH)) {
                         deltaY -= mScrollConsumed[1];
@@ -931,6 +948,7 @@ public class NestedScrollView extends FrameLayout implements NestedScrollingPare
 
                     mScrollConsumed[1] = 0;
 
+                    // 通知父布局处理剩余的滑动事件
                     dispatchNestedScroll(0, scrolledDeltaY, 0, unconsumedY, mScrollOffset,
                             ViewCompat.TYPE_TOUCH, mScrollConsumed);
 
