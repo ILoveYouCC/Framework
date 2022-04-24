@@ -10,3 +10,21 @@ onLayout()
 onDraw()
 
 
+Paint
+    breakText() 用来判断文字什么时候换行。
+
+Canvas
+    drawText() 绘制文字
+    范围裁切
+        clipRect()
+        clipPath()
+        clipOutRect()/clipOutPath()
+
+    几何变换
+        translate(x, y)
+        rotate(degree)
+        scale(x, y)
+        skew(x, y)
+        多次变化的时候，要反着写。
+
+StaticLayout
